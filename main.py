@@ -7,11 +7,8 @@ np.random.seed(1)
 
 
 class Neuron:
-    '''
-    Layer of neurons
-    
-    self.
-    '''
+    '''Layer of neurons'''
+
     def __init__(self, weights):
         self.weights = weights
 
@@ -23,7 +20,7 @@ class Neuron:
 
     def think(self, input_set: list) -> np.ndarray:
         '''Returns product of input and weights'''
-        total = np.dot(self.weights, input_set)
+        total = np.dot(input_set, self.weights)
         return self.sigmoid(total)
 
 
@@ -57,11 +54,11 @@ class NeuralNetwork:
         return self._layers
 
     @layers.setter
-    def layers(self, value):
+    def layers(self, value) -> np.ndarray:
         self._layers = value
 
     def __get_random_weights(self, input: int, output: int):
-        return 2 * np.random.random((output, input)) - 1
+        return 2 * np.random.random((input, output)) - 1
 
     def __new_layer(self, input_count: Optional[int], output_count: Optional[int], **kwargs):
         if not kwargs.get('weights'):
@@ -78,31 +75,32 @@ class NeuralNetwork:
 
         Returns value of outer layer
         '''
-        values = layers[0].think(input_set)
-        layers[0].values = values
+        layer = layers[0]
+        values = layer.think(input_set)
+        layer.values = values
         if len(layers) == 1:
             return values
         return self.__calc_layer_values(values, layers[1:])
 
-    def backward(self, input, predicted_output):
+    def backward(self, input_set: list, predicted_output: list):
 
-        def set_delta(prev_delta, layers): #move it to Neuron
+        def set_delta(prev_delta, layers):  # move it to Neuron
             layer = layers[0]
-            error = np.dot(prev_delta, layer.weights)
-            delta = error * Neuron.sigmoid(layer.values, True) # bug shapes
+            error = np.dot(prev_delta, layer.weights.T)
+            delta = error * Neuron.sigmoid(layer.values, True)  # bug shapes
             layer.delta = delta
             if len(layers) == 1:
                 return delta
             return set_delta(delta, layers[1:])
 
-        self.forward(input)
+        self.forward(input_set)
         outer_layer = self.layers[-1]
         output_error = np.array(predicted_output) - outer_layer.values
         output_delta = output_error * Neuron.sigmoid(outer_layer.values, True)
         outer_layer.delta = output_delta
         set_delta(output_delta, np.flip(self.layers))
 
-    def forward(self, input_set) -> np.ndarray:
+    def forward(self, input_set: list) -> np.ndarray:
         '''Returns Numpy array with output of forward propagation'''
         return self.__calc_layer_values(input_set, self.layers)
 
@@ -116,5 +114,5 @@ class NeuralNetwork:
 
 
 if __name__ == "__main__":
-    nw = NeuralNetwork([3, 2, 1])
-    nw.backward([1, 0, 1], [1])
+    nw = NeuralNetwork([4, 3, 2])
+    nw.backward([1, 0, 1, 1], [1, 0])
