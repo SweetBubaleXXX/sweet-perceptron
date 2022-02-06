@@ -3,8 +3,6 @@ from typing import Optional
 import numpy as np
 from multipledispatch import dispatch
 
-np.random.seed(1)
-
 
 class Neuron:
     '''Layer of neurons'''
@@ -20,7 +18,7 @@ class Neuron:
 
     def change_weights(self, delta):
         '''Changes weight values according to delta'''
-        self.weights -= np.dot(self.values, delta)
+        self.weights += np.dot(self.values.T, delta)
 
     def think(self, input_set: list) -> np.ndarray:
         '''Returns product of input and weights'''
@@ -80,8 +78,8 @@ class NeuralNetwork:
         Returns value of outer layer
         '''
         layer = layers[0]
+        layer.values = input_set
         values = layer.think(input_set)
-        layer.values = values
         if len(layers) == 1:
             return values
         return self.__calc_layer_values(values, layers[1:])
@@ -90,41 +88,39 @@ class NeuralNetwork:
         '''
         Calculates error and updates weights according to delta
         '''
-        def set_delta(prev_delta, prev_weights, layers):
+        def set_delta(delta, layers):
             layer = layers[0]
-            error = np.dot(prev_delta, prev_weights.T)
-            delta = error * Neuron.sigmoid(layer.values, True)
             layer.change_weights(delta)
-            if len(layers) == 1:
-                return delta
-            return set_delta(delta, layer.weights, layers[1:])
+            if len(layers) != 1:
+                error = np.dot(delta, layer.weights.T)
+                next_delta = error * Neuron.sigmoid(layer.values, True)
+                return set_delta(next_delta, layers[1:])
 
         output = self.forward(input_set)
         output_error = np.array(predicted_output) - output
         output_delta = output_error * Neuron.sigmoid(output, True)
-        outer_layer = self.layers[-1]
-        outer_layer.change_weights(output_delta)
-        set_delta(output_delta, outer_layer.weights, np.flip(self.layers[:-1]))
+        set_delta(output_delta, np.flip(self.layers))
         return output_error
 
     def train(self, epochs: int, input_set: list, predicted_outputs: list):
         error_per_iteration = np.array([])
         for iter in range(epochs):
-            error_per_batch = np.array([])
-            for inputs, outputs in zip(input_set, predicted_outputs):
-                error = self.__backward(inputs, outputs)
-                error_per_batch = np.append(error_per_batch, np.abs(error))
-            error_per_batch = np.average(error_per_batch)
-            error_per_iteration = np.append(error_per_iteration, error_per_batch)
+            error = self.__backward(input_set, predicted_outputs)
+            error_per_iteration = np.append(
+                error_per_iteration, np.average(np.abs(error)))
         return error_per_iteration
 
     def forward(self, input_set: list) -> np.ndarray:
         '''Returns Numpy array with output of forward propagation'''
-        return self.__calc_layer_values(input_set, self.layers)
+        return self.__calc_layer_values(np.array(input_set), self.layers)
 
 
 if __name__ == "__main__":
     nw = NeuralNetwork([3, 4, 1])
-    inputs = [[1, 0, 1], [1, 1, 1], [1, 1, 0], [1, 0, 0], [0, 1, 1], [0, 0, 0], [0, 1, 0], [0, 0, 1]]
+    print(nw.forward([1, 0, 1]))
+    inputs = [[1, 0, 1], [1, 1, 1], [1, 1, 0], [1, 0, 0],
+              [0, 1, 1], [0, 0, 0], [0, 1, 0], [0, 0, 1]]
     outputs = [[i] for i in [1, 1, 1, 1, 0, 0, 0, 0]]
-    error = nw.train(50, inputs, outputs)
+    error = nw.train(1000, inputs, outputs)
+
+# set/get weights
