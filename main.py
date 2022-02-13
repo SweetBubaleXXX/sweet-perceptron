@@ -59,6 +59,17 @@ class NeuralNetwork:
     def layers(self, value):
         self._layers = value
 
+    @property
+    def weights(self):
+        weight_arr = np.array([])
+        for i in self.layers:
+            weight_arr = np.append(weight_arr, i.weights)
+        return weight_arr
+
+    @weights.setter
+    def weights(self, value):
+        pass
+
     def __get_random_weights(self, input: int, output: int):
         return 2 * np.random.random((input, output)) - 1
 
@@ -122,5 +133,3 @@ if __name__ == "__main__":
               [0, 1, 1], [0, 0, 0], [0, 1, 0], [0, 0, 1]]
     outputs = [[i] for i in [1, 1, 1, 1, 0, 0, 0, 0]]
     error = nw.train(1000, inputs, outputs)
-
-# set/get weights
