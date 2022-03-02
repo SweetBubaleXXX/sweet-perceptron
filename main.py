@@ -61,10 +61,10 @@ class NeuralNetwork:
 
     @property
     def weights(self):
-        weight_arr = np.array([])
+        weight_list = []
         for i in self.layers:
-            weight_arr = np.append(weight_arr, i.weights)
-        return weight_arr
+            weight_list.append(i.weights.tolist())
+        return weight_list
 
     @weights.setter
     def weights(self, value):
