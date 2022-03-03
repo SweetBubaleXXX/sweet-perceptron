@@ -1,29 +1,9 @@
-from typing import Optional
 from functools import singledispatchmethod
+from typing import Optional
 
 import numpy as np
 
-
-class Neuron:
-    '''Layer of neurons'''
-
-    def __init__(self, weights):
-        self.weights = weights
-
-    @staticmethod
-    def sigmoid(x, derivative=False):
-        if derivative:
-            return np.exp(-x) / (np.exp(-x) + 1)**2
-        return 1 / (1 + np.exp(-x))
-
-    def change_weights(self, delta):
-        '''Changes weight values according to delta'''
-        self.weights += np.dot(self.values.T, delta)
-
-    def think(self, input_set: list) -> np.ndarray:
-        '''Returns product of input and weights'''
-        total = np.dot(input_set, self.weights)
-        return self.sigmoid(total)
+from ..Neuron import Neuron
 
 
 class NeuralNetwork:
@@ -127,12 +107,3 @@ class NeuralNetwork:
     def forward(self, input_set: list) -> np.ndarray:
         '''Returns Numpy array with output of forward propagation'''
         return self.__calc_layer_values(np.array(input_set), self.layers)
-
-
-if __name__ == "__main__":
-    nw = NeuralNetwork((3, 4, 1))
-    print(nw.forward([1, 0, 1]))
-    inputs = [[1, 0, 1], [1, 1, 1], [1, 1, 0], [1, 0, 0],
-              [0, 1, 1], [0, 0, 0], [0, 1, 0], [0, 0, 1]]
-    outputs = [[i] for i in [1, 1, 1, 1, 0, 0, 0, 0]]
-    error = nw.train(1000, inputs, outputs)
