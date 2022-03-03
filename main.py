@@ -1,7 +1,7 @@
 from typing import Optional
+from functools import singledispatchmethod
 
 import numpy as np
-from multipledispatch import dispatch
 
 
 class Neuron:
@@ -28,26 +28,25 @@ class Neuron:
 
 class NeuralNetwork:
     '''
-    NeuralNetwork(input_size: int, neurons_per_layer: int, hidden_layers: int, output_size: int)
+    NeuralNetwork(layers_sizes: tuple): creates neural network with given sizes
 
-    NeuralNetwork(layers_sizes: list)
+    NeuralNetwork(weight_list: list[list]): creates neural network with given set of weights
     '''
-    @dispatch(int, int, int, int)  # try to replace with @overload
-    def __init__(self, input_size, neurons_per_layer, hidden_layers, output_size):
-        self.__append_layers(
-            self.__new_layer(input_size, neurons_per_layer))
-        for i in range(hidden_layers):
-            self.__append_layers(self.__new_layer(
-                neurons_per_layer, neurons_per_layer))
-        self.__append_layers(
-            self.__new_layer(neurons_per_layer, output_size))
 
-    @dispatch(list)
-    def __init__(self, layers_sizes):
+    @singledispatchmethod
+    def __init__(self, arg):
+        raise TypeError(f"Unknown argument type ({type(arg)})")
+
+    @__init__.register
+    def _(self, layers_sizes: tuple):
         for i, size in enumerate(layers_sizes):
             if i == len(layers_sizes) - 1:
                 break
             self.__append_layers(self.__new_layer(size, layers_sizes[i+1]))
+
+    @__init__.register
+    def _(self, weight_list: list):
+        self.weights = weight_list
 
     @property
     def layers(self) -> np.ndarray:
@@ -68,13 +67,17 @@ class NeuralNetwork:
 
     @weights.setter
     def weights(self, value):
-        pass
+        self.layers = np.array([])
+        for weight in value:
+            self.__append_layers(self.__new_layer(weights=np.array(weight)))
 
     def __get_random_weights(self, input: int, output: int):
         return 2 * np.random.random((input, output)) - 1
 
-    def __new_layer(self, input_count: Optional[int], output_count: Optional[int], **kwargs):
-        if not kwargs.get('weights'):
+    def __new_layer(self, input_count: Optional[int] = None, output_count: Optional[int] = None, **kwargs):
+        if "weights" in kwargs:
+            weights = kwargs.get('weights')
+        else:
             weights = self.__get_random_weights(input_count, output_count)
         neuron = Neuron(weights)
         return neuron
@@ -127,7 +130,7 @@ class NeuralNetwork:
 
 
 if __name__ == "__main__":
-    nw = NeuralNetwork([3, 4, 1])
+    nw = NeuralNetwork((3, 4, 1))
     print(nw.forward([1, 0, 1]))
     inputs = [[1, 0, 1], [1, 1, 1], [1, 1, 0], [1, 0, 0],
               [0, 1, 1], [0, 0, 0], [0, 1, 0], [0, 0, 1]]
