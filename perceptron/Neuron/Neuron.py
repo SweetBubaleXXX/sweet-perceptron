@@ -1,17 +1,20 @@
+from typing import Callable
+
 import numpy as np
+
+from .functions import sigmoid
 
 
 class Neuron:
-    '''Layer of neurons'''
+    '''
+    Layer of neurons
+
+    Default activation function is 'Sigmoid'
+    '''
 
     def __init__(self, weights):
         self.weights = weights
-
-    @staticmethod
-    def sigmoid(x, derivative=False):
-        if derivative:
-            return np.exp(-x) / (np.exp(-x) + 1)**2
-        return 1 / (1 + np.exp(-x))
+        self.activate: Callable  = sigmoid
 
     def change_weights(self, delta):
         '''Changes weight values according to delta'''
@@ -20,4 +23,4 @@ class Neuron:
     def think(self, input_set: list) -> np.ndarray:
         '''Returns product of input and weights'''
         total = np.dot(input_set, self.weights)
-        return self.sigmoid(total)
+        return self.activate(total)

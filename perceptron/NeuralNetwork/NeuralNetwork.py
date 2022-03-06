@@ -39,7 +39,7 @@ class NeuralNetwork:
         self._layers = value
 
     @property
-    def weights(self):
+    def weights(self) -> list:
         weight_list = []
         for i in self.layers:
             weight_list.append(i.weights.tolist())
@@ -51,10 +51,36 @@ class NeuralNetwork:
         for weight in value:
             self.__append_layers(self.__new_layer(weights=np.array(weight)))
 
+    @property
+    def activation_funcs(self) -> list:
+        '''List with names of activation functions'''
+        return [i.activate.__name__ for i in self.layers]
+
+    @activation_funcs.setter
+    def activation_funcs(self, value: tuple):
+        '''
+        Sets activation functions to layers
+
+        Gets tuple: (function for hidden layers, function for output layer)
+        '''
+        for i in self.layers[:-1]:
+            i.activate = value[0]
+        if len(value) > 1:
+            self.layers[-1].activate = value[1]
+
+    @property
+    def size(self):
+        '''
+        Tuple with dimensions of neural network
+
+        (input size, ... , output size)
+        '''
+        return (self.layers[0].weights.shape[0], *[i.weights.shape[1] for i in self.layers])
+
     def __get_random_weights(self, input: int, output: int):
         return 2 * np.random.random((input, output)) - 1
 
-    def __new_layer(self, input_count: Optional[int] = None, output_count: Optional[int] = None, **kwargs):
+    def __new_layer(self, input_count: Optional[int] = None, output_count: Optional[int] = None, **kwargs) -> Neuron:
         if "weights" in kwargs:
             weights = kwargs.get('weights')
         else:
@@ -86,24 +112,35 @@ class NeuralNetwork:
             layer = layers[0]
             layer.change_weights(delta)
             if len(layers) != 1:
+                activation_func = layers[1].activate
                 error = np.dot(delta, layer.weights.T)
-                next_delta = error * Neuron.sigmoid(layer.values, True)
+                next_delta = error * activation_func(layer.values, True)
                 return set_delta(next_delta, layers[1:])
 
+        activation_func = self.layers[-1].activate
         output = self.forward(input_set)
         output_error = np.array(predicted_output) - output
-        output_delta = output_error * Neuron.sigmoid(output, True)
+        output_delta = output_error * activation_func(output, True)
         set_delta(output_delta, np.flip(self.layers))
         return output_error
 
-    def train(self, epochs: int, input_set: list, predicted_outputs: list):
-        error_per_iteration = np.array([])
+    def train(self, epochs: int, input_set: list, predicted_outputs: list) -> np.ndarray:
+        '''
+        Trains neural network
+
+        Returns NDArray with error values per iteration
+        '''
+        error_per_iteration = []
         for iter in range(epochs):
             error = self.__backward(input_set, predicted_outputs)
-            error_per_iteration = np.append(
-                error_per_iteration, np.average(np.abs(error)))
-        return error_per_iteration
+            error_per_iteration.append(np.average(np.abs(error)))
+        return np.array(error_per_iteration)
 
     def forward(self, input_set: list) -> np.ndarray:
         '''Returns Numpy array with output of forward propagation'''
         return self.__calc_layer_values(np.array(input_set), self.layers)
+
+    def normalize_weights(self):
+        '''Turns all weights into positive values'''
+        for i in self.layers:
+            i.weights = np.abs(i.weights)
