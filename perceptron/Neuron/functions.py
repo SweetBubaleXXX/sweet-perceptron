@@ -27,3 +27,25 @@ def relu(x, derivative=False):
 def softmax(x):
     '''Note: can't use in neural network because of no derivative'''
     return exp(x) / np.sum(exp(x))
+
+
+def xavier_init(input: int, output: int):
+    scale = np.sqrt(2 / (input + output))
+    return np.random.uniform(-scale, scale, size=(input, output))
+
+
+def he_init(input: int, output: int):
+    scale = np.sqrt(2 / input)
+    return np.random.uniform(-scale, scale, size=(input, output))
+
+
+def random_interval_init(low: float, high: float):
+    return lambda input, output: np.random.uniform(low, high, size=(input, output))
+
+
+initializations = {
+    "linear": random_interval_init(-1, 1),
+    "sigmoid": xavier_init,
+    "tanh": xavier_init,
+    "relu": he_init
+}

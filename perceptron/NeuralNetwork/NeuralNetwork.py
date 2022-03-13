@@ -1,5 +1,4 @@
 from functools import singledispatchmethod
-from typing import Optional
 
 import numpy as np
 
@@ -22,7 +21,7 @@ class NeuralNetwork:
         for i, size in enumerate(layers_sizes):
             if i == len(layers_sizes) - 1:
                 break
-            self.__append_layers(self.__new_layer(size, layers_sizes[i+1]))
+            self.__append_layers(Neuron(size, layers_sizes[i+1]))
 
     @__init__.register
     def _(self, weight_list: list):
@@ -49,7 +48,7 @@ class NeuralNetwork:
     def weights(self, value):
         self.layers = np.array([])
         for weight in value:
-            self.__append_layers(self.__new_layer(weights=np.array(weight)))
+            self.__append_layers(Neuron(weights=np.array(weight)))
 
     @property
     def activation_funcs(self) -> list:
@@ -77,17 +76,6 @@ class NeuralNetwork:
         '''
         return (self.layers[0].weights.shape[0], *[i.weights.shape[1] for i in self.layers])
 
-    def __get_random_weights(self, input: int, output: int):
-        return 2 * np.random.random((input, output)) - 1
-
-    def __new_layer(self, input_count: Optional[int] = None, output_count: Optional[int] = None, **kwargs) -> Neuron:
-        if "weights" in kwargs:
-            weights = kwargs.get('weights')
-        else:
-            weights = self.__get_random_weights(input_count, output_count)
-        neuron = Neuron(weights)
-        return neuron
-
     def __append_layers(self, layer):
         self.layers = np.append(self.layers, layer)
 
@@ -110,7 +98,7 @@ class NeuralNetwork:
         '''
         def set_delta(delta, layers):
             layer = layers[0]
-            layer.change_weights(delta)
+            layer.change_weights(delta, self.learning_rate)
             if len(layers) != 1:
                 activation_func = layers[1].activate
                 error = np.dot(delta, layer.weights.T)
@@ -124,12 +112,13 @@ class NeuralNetwork:
         set_delta(output_delta, np.flip(self.layers))
         return output_error
 
-    def train(self, epochs: int, input_set: list, predicted_outputs: list) -> np.ndarray:
+    def train(self, epochs: int, input_set: list, predicted_outputs: list, learning_rate: float = 1) -> np.ndarray:
         '''
         Trains neural network
 
         Returns NDArray with error values per iteration
         '''
+        self.learning_rate = learning_rate
         error_per_iteration = []
         for iter in range(epochs):
             error = self.__backward(input_set, predicted_outputs)
@@ -140,7 +129,12 @@ class NeuralNetwork:
         '''Returns Numpy array with output of forward propagation'''
         return self.__calc_layer_values(np.array(input_set), self.layers)
 
-    def normalize_weights(self):
-        '''Turns all weights into positive values'''
-        for i in self.layers:
-            i.weights = np.abs(i.weights)
+    def initialize_weights(self, seed: int = None):
+        '''
+        Initialize weights of all layers according to activation functions
+        
+        seed: a seed to initialize weights (Must be convertible to 32 bit unsigned integers)
+        '''
+        np.random.seed(seed)
+        for layer in self.layers:
+            layer.initialize_weights()
