@@ -1,4 +1,5 @@
 from functools import singledispatchmethod
+from logging import Logger
 
 import numpy as np
 
@@ -112,9 +113,15 @@ class NeuralNetwork:
         set_delta(output_delta, np.flip(self.layers))
         return output_error
 
-    def train(self, epochs: int, input_set: list, predicted_outputs: list, learning_rate: float = 1) -> np.ndarray:
+    def train(self, epochs: int, input_set: list, predicted_outputs: list, learning_rate: float = 1, logger: Logger = None, log_rate: int = 10) -> np.ndarray:
         '''
         Trains neural network
+
+        \tlogger: logging.Logger object (import logging)
+
+        \tlog_rate: number of log outputs
+
+        logging level should be logging.INFO
 
         Returns NDArray with error values per iteration
         '''
@@ -123,6 +130,10 @@ class NeuralNetwork:
         for iter in range(epochs):
             error = self.__backward(input_set, predicted_outputs)
             error_per_iteration.append(np.average(np.abs(error)))
+            if isinstance(logger, Logger) and (iter + 1) % (epochs // log_rate) == 0:
+                logger.info(
+                    f"Iteration: {iter + 1}/{epochs} | Loss: {np.average(np.abs(error))}")
+
         return np.array(error_per_iteration)
 
     def forward(self, input_set: list) -> np.ndarray:
@@ -132,7 +143,7 @@ class NeuralNetwork:
     def initialize_weights(self, seed: int = None):
         '''
         Initialize weights of all layers according to activation functions
-        
+
         seed: a seed to initialize weights (Must be convertible to 32 bit unsigned integers)
         '''
         np.random.seed(seed)

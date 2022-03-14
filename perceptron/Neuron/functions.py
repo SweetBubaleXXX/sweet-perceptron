@@ -1,3 +1,5 @@
+from typing import Callable
+
 from numpy import exp
 import numpy as np
 
@@ -39,7 +41,7 @@ def he_init(input: int, output: int):
     return np.random.uniform(-scale, scale, size=(input, output))
 
 
-def random_interval_init(low: float, high: float):
+def random_interval_init(low: float, high: float) -> Callable[[float, float], np.ndarray]:
     return lambda input, output: np.random.uniform(low, high, size=(input, output))
 
 
