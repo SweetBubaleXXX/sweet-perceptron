@@ -1,3 +1,4 @@
+import math
 from functools import singledispatchmethod
 from logging import Logger
 
@@ -7,11 +8,11 @@ from ..Neuron import Neuron
 
 
 class NeuralNetwork:
-    '''
+    """
     NeuralNetwork(layers_sizes: tuple): creates neural network with given sizes
 
     NeuralNetwork(weight_list: list[list]): creates neural network with given set of weights
-    '''
+    """
 
     @singledispatchmethod
     def __init__(self, arg):
@@ -19,6 +20,7 @@ class NeuralNetwork:
 
     @__init__.register
     def _(self, layers_sizes: tuple):
+        """Init neural network with given set of sizes."""
         for i, size in enumerate(layers_sizes):
             if i == len(layers_sizes) - 1:
                 break
@@ -26,10 +28,15 @@ class NeuralNetwork:
 
     @__init__.register
     def _(self, weight_list: list):
+        """Init neural network with given weight list."""
         self.weights = weight_list
+
+    def __str__(self) -> str:
+        return f"NeuralNetwork{self.size}"
 
     @property
     def layers(self) -> np.ndarray:
+        """NDArray with Neuron objects (array of neuron layers)"""
         if not hasattr(self, '_layers'):
             self._layers = np.array([])
         return self._layers
@@ -40,6 +47,7 @@ class NeuralNetwork:
 
     @property
     def weights(self) -> list:
+        """List with weights values of each layer"""
         weight_list = []
         for i in self.layers:
             weight_list.append(i.weights.tolist())
@@ -53,16 +61,16 @@ class NeuralNetwork:
 
     @property
     def activation_funcs(self) -> list:
-        '''List with names of activation functions'''
+        """List with names of activation functions"""
         return [i.activate.__name__ for i in self.layers]
 
     @activation_funcs.setter
     def activation_funcs(self, value: tuple):
-        '''
-        Sets activation functions to layers
+        """
+        Sets activation functions to layers.
 
         Gets tuple: (function for hidden layers, function for output layer)
-        '''
+        """
         for i in self.layers[:-1]:
             i.activate = value[0]
         if len(value) > 1:
@@ -70,22 +78,22 @@ class NeuralNetwork:
 
     @property
     def size(self):
-        '''
+        """
         Tuple with dimensions of neural network
 
         (input size, ... , output size)
-        '''
+        """
         return (self.layers[0].weights.shape[0], *[i.weights.shape[1] for i in self.layers])
 
     def __append_layers(self, layer):
         self.layers = np.append(self.layers, layer)
 
     def __calc_layer_values(self, input_set, layers):
-        '''
-        Calculates input and weights
+        """
+        Calculates input and weights.
 
-        Returns value of outer layer
-        '''
+        Returns value of outer layer.
+        """
         layer = layers[0]
         layer.values = input_set
         values = layer.think(input_set)
@@ -94,9 +102,9 @@ class NeuralNetwork:
         return self.__calc_layer_values(values, layers[1:])
 
     def __backward(self, input_set: list, predicted_output: list):
-        '''
-        Calculates error and updates weights according to delta
-        '''
+        """
+        Calculates error and updates weights according to delta.
+        """
         def set_delta(delta, layers):
             layer = layers[0]
             layer.change_weights(delta, self.learning_rate)
@@ -113,39 +121,45 @@ class NeuralNetwork:
         set_delta(output_delta, np.flip(self.layers))
         return output_error
 
-    def train(self, epochs: int, input_set: list, predicted_outputs: list, learning_rate: float = 1, logger: Logger = None, log_rate: int = 10) -> np.ndarray:
-        '''
-        Trains neural network
+    def train(self, epochs: int, input_set: list, predicted_outputs: list,
+              learning_rate: float = 1, logger: Logger = None, log_rate: int = 1) -> np.ndarray:
+        """
+        Trains neural network.
 
-        \tlogger: logging.Logger object (import logging)
+        \tlogger -- logging.Logger object (import logging)
 
-        \tlog_rate: number of log outputs
+        \tlog_rate -- number of log outputs
 
         logging level should be logging.INFO
 
-        Returns NDArray with error values per iteration
-        '''
+        Returns NDArray with loss values per iteration.
+        """
         self.learning_rate = learning_rate
-        error_per_iteration = []
+        loss_per_iteration = []
         for iter in range(epochs):
             error = self.__backward(input_set, predicted_outputs)
-            error_per_iteration.append(np.average(np.abs(error)))
-            if isinstance(logger, Logger) and (iter + 1) % (epochs // log_rate) == 0:
-                logger.info(
-                    f"Iteration: {iter + 1}/{epochs} | Loss: {np.average(np.abs(error))}")
+            loss = np.average(np.abs(error))
+            loss_per_iteration.append(loss)
 
-        return np.array(error_per_iteration)
+            # Logging
+            if (isinstance(logger, Logger) and
+                (iter + 1) % math.floor(epochs / log_rate) == epochs % math.floor(epochs / log_rate) and
+                    iter >= epochs % log_rate):
+                logger.info(
+                    f"Iteration: {iter + 1}/{epochs} ({format((iter + 1) / epochs, '.1%')}) | Loss: {loss}")
+
+        return np.array(loss_per_iteration)
 
     def forward(self, input_set: list) -> np.ndarray:
-        '''Returns Numpy array with output of forward propagation'''
+        """Returns Numpy array with output of forward propagation."""
         return self.__calc_layer_values(np.array(input_set), self.layers)
 
     def initialize_weights(self, seed: int = None):
-        '''
-        Initialize weights of all layers according to activation functions
+        """
+        Initialize weights of all layers according to activation functions.
 
         seed: a seed to initialize weights (Must be convertible to 32 bit unsigned integers)
-        '''
+        """
         np.random.seed(seed)
         for layer in self.layers:
             layer.initialize_weights()
