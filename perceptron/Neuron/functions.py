@@ -1,3 +1,4 @@
+from turtle import forward
 from typing import Callable
 
 from numpy import exp
@@ -26,9 +27,10 @@ def relu(x, derivative=False):
     return np.maximum(0, x)
 
 
-def softmax(x):
-    '''Note: can't use in neural network because of no derivative'''
-    return exp(x) / np.sum(exp(x))
+def leaky_relu(x, derivative=False):
+    if derivative:
+        return np.where(x > 0, 1, 0.01)
+    return np.where(x > 0, x, x * 0.01)
 
 
 def xavier_init(input: int, output: int):
@@ -49,5 +51,6 @@ initializations = {
     "linear": random_interval_init(-1, 1),
     "sigmoid": xavier_init,
     "tanh": xavier_init,
-    "relu": he_init
+    "relu": he_init,
+    "leaky_relu": he_init
 }

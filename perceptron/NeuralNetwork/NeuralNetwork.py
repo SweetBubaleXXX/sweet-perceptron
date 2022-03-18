@@ -1,6 +1,6 @@
-import math
 from functools import singledispatchmethod
 from logging import Logger
+from math import floor
 
 import numpy as np
 
@@ -32,7 +32,13 @@ class NeuralNetwork:
         self.weights = weight_list
 
     def __str__(self) -> str:
-        return f"NeuralNetwork{self.size}"
+        input_str = f"Inputs: {self.layers[0].weights.shape[0]}"
+        hidden_list = []
+        for index, elem in enumerate(self.layers[:-1]):
+            hidden_list.append(
+                f"Hidden {index + 1}: {elem.weights.shape[1]} -- {elem.activate.__name__}")
+        output_str = f"Outputs: {self.layers[-1].weights.shape[1]} -- {self.layers[-1].activate.__name__}"
+        return '\n'.join([input_str, *hidden_list, output_str])
 
     @property
     def layers(self) -> np.ndarray:
@@ -126,9 +132,9 @@ class NeuralNetwork:
         """
         Trains neural network.
 
-        \tlogger -- logging.Logger object (import logging)
+            logger -- logging.Logger object (import logging)
 
-        \tlog_rate -- number of log outputs
+            log_rate -- number of log outputs
 
         logging level should be logging.INFO
 
@@ -143,7 +149,7 @@ class NeuralNetwork:
 
             # Logging
             if (isinstance(logger, Logger) and
-                (iter + 1) % math.floor(epochs / log_rate) == epochs % math.floor(epochs / log_rate) and
+                (iter + 1) % floor(epochs / log_rate) == epochs % floor(epochs / log_rate) and
                     iter >= epochs % log_rate):
                 logger.info(
                     f"Iteration: {iter + 1}/{epochs} ({format((iter + 1) / epochs, '.1%')}) | Loss: {loss}")
