@@ -6,6 +6,8 @@ import numpy as np
 
 
 def linear(x, derivative=False):
+    if derivative:
+        return 1
     return x
 
 
