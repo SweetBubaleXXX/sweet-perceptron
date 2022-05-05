@@ -1,6 +1,7 @@
 # sweet-perceptron
 ![Python](https://img.shields.io/badge/Python-%3E%3D3.8-brightgreen)
 ![NumPy](https://img.shields.io/badge/NumPy-%3E%3D1.15-blue)
+![GitHub](https://img.shields.io/github/license/SweetBubaleXXX/sweet-perceptron)
 
 This is a simple neural network library.
 
@@ -40,4 +41,4 @@ nw.forward(['input'])
 
 ## License
 
-![GitHub](https://img.shields.io/github/license/SweetBubaleXXX/sweet-perceptron)
+[MIT License](https://github.com/SweetBubaleXXX/sweet-perceptron/blob/main/LICENSE)
