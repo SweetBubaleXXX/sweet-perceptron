@@ -1,6 +1,7 @@
 from functools import singledispatchmethod
 from logging import Logger
 from math import floor
+from typing import Union
 
 import numpy as np
 
@@ -9,9 +10,28 @@ from ..Neuron import Neuron
 
 class NeuralNetwork:
     """
-    NeuralNetwork(layers_sizes: tuple): creates neural network with given sizes
+    NeuralNetwork(layers_sizes: tuple): creates neural network with given sizes.
 
-    NeuralNetwork(weight_list: list[list]): creates neural network with given set of weights
+    NeuralNetwork(weight_list: list[list]): creates neural network with given set of weights.
+
+    Parameters
+    ----------
+    layers_sizes: tuple
+        Tuple with amounts of neurons on each layer.
+    weight_list: list[list]
+        List with weights of each layer. To get it use weights attribute.
+
+    Attributes
+    ----------
+    activation_funcs : list
+        List with names of activation functions.
+        Setter gets tuple - ({function for hidden layers}, {function for output layer}).
+    layers : NDArray[Neuron]
+        NDArray with Neuron objects (array of neuron layers).
+    size : tuple
+        Tuple with dimensions of neural network.
+    weights : list[list]
+        List with weights values of each layer.
     """
 
     @singledispatchmethod
@@ -42,7 +62,7 @@ class NeuralNetwork:
 
     @property
     def layers(self) -> np.ndarray:
-        """NDArray with Neuron objects (array of neuron layers)"""
+        """NDArray with Neuron objects (array of neuron layers)."""
         if not hasattr(self, '_layers'):
             self._layers = np.array([])
         return self._layers
@@ -53,7 +73,7 @@ class NeuralNetwork:
 
     @property
     def weights(self) -> list:
-        """List with weights values of each layer"""
+        """List with weights values of each layer."""
         weight_list = []
         for i in self.layers:
             weight_list.append(i.weights.tolist())
@@ -75,7 +95,10 @@ class NeuralNetwork:
         """
         Sets activation functions to layers.
 
-        Gets tuple: (function for hidden layers, function for output layer)
+        Parameters
+        ----------
+        value : tuple
+            Should look like (function for hidden layers, function for output layer)
         """
         for i in self.layers[:-1]:
             i.activate = value[0]
@@ -83,22 +106,26 @@ class NeuralNetwork:
             self.layers[-1].activate = value[1]
 
     @property
-    def size(self):
+    def size(self) -> tuple:
         """
-        Tuple with dimensions of neural network
+        Tuple with dimensions of neural network.
 
-        (input size, ... , output size)
+        Examples
+        --------
+        (input size, layer_1 size, ... , output size)
         """
         return (self.layers[0].weights.shape[0], *[i.weights.shape[1] for i in self.layers])
 
-    def __append_layers(self, layer):
+    def __append_layers(self, layer: Neuron):
         self.layers = np.append(self.layers, layer)
 
-    def __calc_layer_values(self, input_set, layers):
+    def __calc_layer_values(self, input_set: Union[list, np.array], layers: list):
         """
         Calculates input and weights.
 
-        Returns value of outer layer.
+        Returns
+        -------
+        Value of outer layer.
         """
         layer = layers[0]
         layer.values = input_set
@@ -107,38 +134,56 @@ class NeuralNetwork:
             return values
         return self.__calc_layer_values(values, layers[1:])
 
-    def __backward(self, input_set: list, predicted_output: list):
+    def __backward(self, input_set: Union[list, np.array],
+                   predicted_output: Union[list, np.array]) -> np.ndarray:
         """
-        Calculates error and updates weights according to delta.
+        Calculates error and updates weights of all layers according to delta.
         """
-        def set_delta(delta, layers):
-            layer = layers[0]
+        def set_delta(delta, start_index: int):
+            layer = self.layers[start_index]
             layer.change_weights(delta, self.learning_rate)
-            if len(layers) != 1:
-                activation_func = layers[1].activate
+            if start_index != 0:
+                activation_func = self.layers[start_index - 1].activate
                 error = np.dot(delta, layer.weights.T)
                 next_delta = error * activation_func(layer.values, True)
-                return set_delta(next_delta, layers[1:])
+                return set_delta(next_delta, start_index - 1)
 
         activation_func = self.layers[-1].activate
         output = self.forward(input_set)
         output_error = np.array(predicted_output) - output
         output_delta = output_error * activation_func(output, True)
-        set_delta(output_delta, np.flip(self.layers))
+        set_delta(output_delta, len(self.layers) - 1)
         return output_error
 
-    def train(self, epochs: int, input_set: list, predicted_outputs: list,
-              learning_rate: float = 1, logger: Logger = None, log_rate: int = 1) -> np.ndarray:
+    def train(self, epochs: int, input_set: Union[list, np.array],
+              predicted_outputs: Union[list, np.array], learning_rate: float = 1,
+              logger: Logger = None, log_rate: int = 1) -> np.ndarray:
         """
         Trains neural network.
 
-            logger -- logging.Logger object (import logging)
+        Parameters
+        ----------
+        epochs : int
+            Number of epochs.
+        input_set : list or np.array
+            Your train set.
+        predicted_outputs : list or np.array
+            Outputs of train set. It's length must be same as length of train set.
+        learning_rate : float
+            It changes speed of learning.
+            Lower value leads to lower changes of weights and slower learning.
+        logger : logging.Logger
+            To use it import logging from standard library.
+        log_rate : int
+            Number of log outputs during training.
 
-            log_rate -- number of log outputs
+        Returns
+        -------
+        NDArray with loss values per iteration.
 
-        logging level should be logging.INFO
-
-        Returns NDArray with loss values per iteration.
+        Notes
+        -----
+        Logging level should be logging.INFO.
         """
         self.learning_rate = learning_rate
         loss_per_iteration = []
@@ -156,7 +201,7 @@ class NeuralNetwork:
 
         return np.array(loss_per_iteration)
 
-    def forward(self, input_set: list) -> np.ndarray:
+    def forward(self, input_set: Union[list, np.array]) -> np.ndarray:
         """Returns Numpy array with output of forward propagation."""
         return self.__calc_layer_values(np.array(input_set), self.layers)
 
@@ -164,7 +209,10 @@ class NeuralNetwork:
         """
         Initialize weights of all layers according to activation functions.
 
-        seed: a seed to initialize weights (Must be convertible to 32 bit unsigned integers)
+        Parameters
+        ----------
+        seed : int
+        A seed to initialize weights (Must be convertible to 32 bit unsigned integers)
         """
         np.random.seed(seed)
         for layer in self.layers:
