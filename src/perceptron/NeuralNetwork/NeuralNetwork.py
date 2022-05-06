@@ -87,19 +87,17 @@ class NeuralNetwork:
 
     @property
     def activation_funcs(self) -> list:
-        """List with names of activation functions"""
+        """
+        List with names of activation functions
+
+        setter : tuple
+            Should look like (function for hidden layers, function for output layer).
+        """
         return [i.activate.__name__ for i in self.layers]
 
     @activation_funcs.setter
     def activation_funcs(self, value: tuple):
-        """
-        Sets activation functions to layers.
-
-        Parameters
-        ----------
-        value : tuple
-            Should look like (function for hidden layers, function for output layer)
-        """
+        """Sets activation functions to layers."""
         for i in self.layers[:-1]:
             i.activate = value[0]
         if len(value) > 1:
@@ -119,7 +117,7 @@ class NeuralNetwork:
     def __append_layers(self, layer: Neuron):
         self.layers = np.append(self.layers, layer)
 
-    def __calc_layer_values(self, input_set: Union[list, np.array], layers: list):
+    def __calc_layer_values(self, input_set: Union[list, np.ndarray], layers: list):
         """
         Calculates input and weights.
 
@@ -134,8 +132,8 @@ class NeuralNetwork:
             return values
         return self.__calc_layer_values(values, layers[1:])
 
-    def __backward(self, input_set: Union[list, np.array],
-                   predicted_output: Union[list, np.array]) -> np.ndarray:
+    def __backward(self, input_set: Union[list, np.ndarray],
+                   predicted_output: Union[list, np.ndarray]) -> np.ndarray:
         """
         Calculates error and updates weights of all layers according to delta.
         """
@@ -155,8 +153,8 @@ class NeuralNetwork:
         set_delta(output_delta, len(self.layers) - 1)
         return output_error
 
-    def train(self, epochs: int, input_set: Union[list, np.array],
-              predicted_outputs: Union[list, np.array], learning_rate: float = 1,
+    def train(self, epochs: int, input_set: Union[list, np.ndarray],
+              predicted_outputs: Union[list, np.ndarray], learning_rate: float = 1,
               logger: Logger = None, log_rate: int = 1) -> np.ndarray:
         """
         Trains neural network.
@@ -165,9 +163,9 @@ class NeuralNetwork:
         ----------
         epochs : int
             Number of epochs.
-        input_set : list or np.array
+        input_set : list or NDArray
             Your train set.
-        predicted_outputs : list or np.array
+        predicted_outputs : list or NDArray
             Outputs of train set. It's length must be same as length of train set.
         learning_rate : float
             It changes speed of learning.
@@ -201,7 +199,7 @@ class NeuralNetwork:
 
         return np.array(loss_per_iteration)
 
-    def forward(self, input_set: Union[list, np.array]) -> np.ndarray:
+    def forward(self, input_set: Union[list, np.ndarray]) -> np.ndarray:
         """Returns Numpy array with output of forward propagation."""
         return self.__calc_layer_values(np.array(input_set), self.layers)
 
@@ -212,7 +210,7 @@ class NeuralNetwork:
         Parameters
         ----------
         seed : int
-        A seed to initialize weights (Must be convertible to 32 bit unsigned integers)
+            A seed to initialize weights (Must be convertible to 32 bit unsigned integers).
         """
         np.random.seed(seed)
         for layer in self.layers:

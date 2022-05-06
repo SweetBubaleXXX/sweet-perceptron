@@ -36,7 +36,7 @@ nw.initialize_weights()
 loss = nw.train(50, ['train inputs set'], ['train outputs set'])
 
 # Get output of forward propagation
-nw.forward(['input'])
+output = nw.forward(['input'])
 ```
 
 ## License
