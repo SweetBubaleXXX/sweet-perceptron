@@ -26,10 +26,6 @@ class Neuron:
         Matrix with weights of neurons.
     activate: Callable
         Activation function of this layer.
-
-    Methods
-    -------
-    
     '''
 
     def __init__(self, input_size: Optional[int] = None,
