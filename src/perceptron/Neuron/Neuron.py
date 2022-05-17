@@ -2,7 +2,7 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from .functions import sigmoid, xavier_init, initializations
+from .functions import sigmoid
 
 
 class Neuron:
@@ -31,7 +31,7 @@ class Neuron:
     def __init__(self, input_size: Optional[int] = None,
                  output_size: Optional[int] = None, weights: Optional[np.ndarray] = None):
         if weights is None:
-            weights = xavier_init(input_size, output_size)
+            weights = sigmoid.__initialization__(input_size, output_size)
         self.weights = weights
         self.activate: Callable = sigmoid
 
@@ -40,7 +40,7 @@ class Neuron:
         Initializes weights of layer depending on current activation function.
         You can pass particular initialization function.
         """
-        init_func = init_func or initializations[self.activate.__name__]
+        init_func = init_func or self.activate.__initialization__
         self.weights = init_func(*self.weights.shape)
 
     def change_weights(self, delta, learning_rate: float):

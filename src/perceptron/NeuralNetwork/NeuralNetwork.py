@@ -88,7 +88,7 @@ class NeuralNetwork:
     @property
     def activation_funcs(self) -> list:
         """
-        List with names of activation functions
+        List with names of activation functions.
 
         setter : tuple
             Should look like (function for hidden layers, function for output layer).
