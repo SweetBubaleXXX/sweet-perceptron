@@ -1,6 +1,7 @@
 from typing import Callable, Optional
 
 import numpy as np
+from numpy import ndarray
 
 from .functions import sigmoid
 
@@ -29,7 +30,7 @@ class Neuron:
     '''
 
     def __init__(self, input_size: Optional[int] = None,
-                 output_size: Optional[int] = None, weights: Optional[np.ndarray] = None):
+                 output_size: Optional[int] = None, weights: Optional[ndarray] = None):
         if weights is None:
             weights = sigmoid.__initialization__(input_size, output_size)
         self.weights = weights
@@ -47,7 +48,7 @@ class Neuron:
         '''Changes weight values according to delta.'''
         self.weights += np.dot(self.values.T, delta) * learning_rate
 
-    def think(self, input_set: list) -> np.ndarray:
+    def think(self, input_set: list) -> ndarray:
         '''Returns product of input and weights.'''
         total = np.dot(input_set, self.weights)
         return self.activate(total)

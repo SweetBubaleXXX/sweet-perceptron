@@ -4,6 +4,7 @@ from math import floor
 from typing import Union
 
 import numpy as np
+from numpy import ndarray
 
 from ..Neuron import Neuron
 
@@ -61,7 +62,7 @@ class NeuralNetwork:
         return '\n'.join([input_str, *hidden_list, output_str])
 
     @property
-    def layers(self) -> np.ndarray:
+    def layers(self) -> ndarray:
         """NDArray with Neuron objects (array of neuron layers)."""
         if not hasattr(self, '_layers'):
             self._layers = np.array([])
@@ -117,7 +118,7 @@ class NeuralNetwork:
     def __append_layers(self, layer: Neuron):
         self.layers = np.append(self.layers, layer)
 
-    def __calc_layer_values(self, input_set: Union[list, np.ndarray], layers: list):
+    def __calc_layer_values(self, input_set: Union[list, ndarray], layers: list):
         """
         Calculates input and weights.
 
@@ -132,8 +133,8 @@ class NeuralNetwork:
             return values
         return self.__calc_layer_values(values, layers[1:])
 
-    def __backward(self, input_set: Union[list, np.ndarray],
-                   predicted_output: Union[list, np.ndarray]) -> np.ndarray:
+    def __backward(self, input_set: Union[list, ndarray],
+                   predicted_output: Union[list, ndarray]) -> ndarray:
         """
         Calculates error and updates weights of all layers according to delta.
         """
@@ -146,16 +147,18 @@ class NeuralNetwork:
                 next_delta = error * activation_func(layer.values, True)
                 return set_delta(next_delta, start_index - 1)
 
-        activation_func = self.layers[-1].activate
+        output_layer = self.layers[-1]
+        activation_func = output_layer.activate
+        loss_func = activation_func.__loss__
         output = self.forward(input_set)
-        output_error = np.array(predicted_output) - output
+        output_error = loss_func(output, np.array(predicted_output))
         output_delta = output_error * activation_func(output, True)
         set_delta(output_delta, len(self.layers) - 1)
         return output_error
 
-    def train(self, epochs: int, input_set: Union[list, np.ndarray],
-              predicted_outputs: Union[list, np.ndarray], learning_rate: float = 1,
-              logger: Logger = None, log_rate: int = 1) -> np.ndarray:
+    def train(self, epochs: int, input_set: Union[list, ndarray],
+              predicted_outputs: Union[list, ndarray], learning_rate: float = 1,
+              logger: Logger = None, log_rate: int = 1) -> ndarray:
         """
         Trains neural network.
 
@@ -199,7 +202,7 @@ class NeuralNetwork:
 
         return np.array(loss_per_iteration)
 
-    def forward(self, input_set: Union[list, np.ndarray]) -> np.ndarray:
+    def forward(self, input_set: Union[list, ndarray]) -> ndarray:
         """Returns Numpy array with output of forward propagation."""
         return self.__calc_layer_values(np.array(input_set), self.layers)
 
